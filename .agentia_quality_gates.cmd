@@ -1,18 +1,18 @@
+cd "F:\Copado Hackton\promotion-proof-clean"
+
+$QualityGate = @'
 @echo off
-setlocal
+setlocal EnableExtensions
+
+cd /d "%~dp0"
 
 echo.
 echo ============================================================
-echo  Agentia Local Quality Gate - PromotionProof
+echo  Agentia Local Quality Gate - PromotionProof Plugin
 echo ============================================================
 echo.
 
-set "ROOT=%~dp0"
-
-powershell.exe ^
-  -NoProfile ^
-  -ExecutionPolicy Bypass ^
-  -File "%ROOT%promotion-proof\check.ps1"
+call agentia promotion-proof check --story US-0000025
 
 set "PP_EXIT=%ERRORLEVEL%"
 
@@ -31,3 +31,10 @@ echo  PromotionProof PASSED.
 echo ============================================================
 
 exit /b 0
+'@
+
+[System.IO.File]::WriteAllText(
+    (Join-Path (Get-Location) ".agentia_quality_gates.cmd"),
+    $QualityGate,
+    [System.Text.Encoding]::ASCII
+)
