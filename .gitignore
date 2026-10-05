@@ -76,4 +76,4 @@ $RECYCLE.BIN/
 **/documents/**
 #**/installedPackages/**
 #**/dashboards/**
-#**/reports/**
+#**/reports/**.agentia/
