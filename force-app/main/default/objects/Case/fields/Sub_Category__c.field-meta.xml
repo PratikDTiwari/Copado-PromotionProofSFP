@@ -18,6 +18,12 @@
                 <default>false</default>
                 <label>Technical Support</label>
             </value>
+            <value>
+                <fullName>API Failure Opt Out Exception</fullName>
+                <default>false</default>
+                <label>API Failure Opt Out Exception</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>
+
