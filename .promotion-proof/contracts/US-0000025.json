@@ -1,0 +1,12 @@
+﻿{
+  "version": 1,
+  "story": {
+    "name": "US-0000025",
+    "title": "PromotionProof Demo - Add API Failure Opt Out Exception"
+  },
+  "component": "Case.Sub_Category__c",
+  "allowedPicklistAdds": [
+    "API Failure Opt Out Exception"
+  ],
+  "blockedUnexpectedChanges": true
+}
