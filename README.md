@@ -1,58 +1,299 @@
-# Salesforce DX Project
+# PromotionProof
 
-Salesforce DX is a development approach that brings source-driven development, team collaboration, and continuous integration to the Salesforce Platform. Instead of working directly in an org through a web browser, you work with metadata as source files in a local DX project, track changes in version control, and deploy through automated processes.
+## Continuous Intent Verification for Salesforce Releases
 
-This project template gets you started with the tools and structure you need to build Salesforce applications using source control, scratch orgs, and the Salesforce CLI.
+> **Salesforce proves the metadata can deploy. Copado governs how it moves. PromotionProof proves this exact change is what the business authorized.**
 
-## Prerequisites
+PromotionProof is a custom Copado Agentia™ Headless CLI plugin that detects technically valid but functionally unauthorized Salesforce metadata changes before they advance through the release workflow.
 
-Before you start, make sure you have:
+## The Problem
 
-- **Salesforce CLI** - Download from [developer.salesforce.com/tools/salesforcecli](https://developer.salesforce.com/tools/salesforcecli). See [Install Salesforce CLI](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_install_cli.htm) for details.
-- **VS Code with Salesforce Extension Pack** - See [Installation Instructions](https://developer.salesforce.com/docs/platform/sfvscode-extensions/guide/install.html) for details. Includes the Agentforce Vibes extension.
-- **A development org** - Sign up for a free Developer Edition org [here](https://developer.salesforce.com/signup).
-- **Dev Hub enabled** (optional, required to create scratch orgs) - You can enable Dev Hub in your development org under Setup > Dev Hub.  See [Provide Developers Access to Salesforce DX Tools](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_dx_tools.htm).
+A Salesforce release can be syntactically valid, merge cleanly, pass tests, and validate successfully while still containing functionality that the approved User Story never requested.
 
-## Project Structure
+This can happen in shared metadata such as Custom Fields, picklists, Permission Sets, Profiles, Flows, and destructive changes.
 
-Your DX project follows this structure:
+```text
+Approved User Story:
++ API Failure Opt Out Exception
 
-- **`force-app/main/default/`** - Your metadata source files live in this default package directory. You can configure additional package directories in the `sfdx-project.json` file.
-- **`config/`** - Scratch org definitions and project settings
-- **`scripts/`** - Automation scripts for common tasks
-- **`sfdx-project.json`** - Project manifest that defines package directories, namespace, API version, and other project-level settings
+Actual release:
++ API Failure Opt Out Exception
++ Account Information Category
+```
 
-See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm).
+Both values are valid Salesforce metadata. The second value is not authorized by the User Story.
 
-## Get Started
+Traditional delivery controls ask **“Can this deploy?”** PromotionProof adds another question: **“Should this exact semantic change deploy for this User Story?”**
 
-Ready to start developing? The [Get Started with Salesforce DX](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_get_started_dx.htm) guide walks you through your first project, from creating a scratch org to creating a simple Apex class or LWC to deploying your code to a sandbox.
+## The Solution
 
-## Common Salesforce CLI Commands
+PromotionProof represents approved User Story scope as a machine-readable **Change Contract**, converts Salesforce metadata differences into semantic operations, and evaluates them using deterministic policy rules.
 
-Here are common CLI commands that you'll use the most:
+Implemented capabilities:
 
-- `sf org login web`: Authorize an org
-- `sf org open`: Open your org in a browser
-- `sf org create scratch`: Create a scratch org
-- `sf project deploy start`: Deploy metadata to your org
-- `sf project retrieve start`: Retrieve metadata from your org
-- `sf template generate <artifact>`: Scaffold new components, such as Apex classes and triggers, LWC components, Lightning apps, and more
-- `sf apex <command>`: Run Apex tests, run anonymous Apex blocks, and view logs
-- `sf data <command>`: Work with test data
-- `sf alias <command>`: Manage org aliases
-- `sf config <command>`: Configure CLI settings
+- CustomField/picklist additions and removals
+- Unauthorized destructive-change detection
+- PermissionSet field-permission escalation detection
+- Human-readable terminal findings
+- Machine-readable JSON evidence
+- Deterministic CI/CD exit codes
+- Agentia project-local quality-gate integration
+- Copado work-item and publish-flow integration
 
-## Use Agentforce Vibes to Build Lightning Apps
+Primary command:
 
-Transform your ideas into custom Lightning apps that extend CRM workflows directly in Lightning Experience. Through natural conversations with Agentforce Vibes, implement custom objects and fields, complex business logic, and dynamic UI components. See [Build a Lightning App Using Agentforce Vibes](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/lexapp-overview.html).
+```powershell
+agentia promotion-proof check --story US-0000025
+```
 
-## Additional Resources
+Agentia runs the same control through:
 
-- [Agentforce Vibes Developer Guide](https://developer.salesforce.com/docs/platform/einstein-for-devs/guide/einstein-overview.html)
-- [Salesforce CLI Installation Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/)
-- [Salesforce CLI Plugin Development Guide](https://developer.salesforce.com/docs/platform/salesforce-cli-plugin/guide/conceptual-overview.html)
-- [Salesforce VS Code Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
+```powershell
+agentia cicd work test --local
+```
 
+## Working Demo
+
+The demo uses Copado User Story `US-0000025`.
+
+### Approved intent
+
+```text
+Add "API Failure Opt Out Exception"
+to Case.Sub_Category__c.
+
+No other values should be added,
+modified, or removed.
+```
+
+### Clean implementation
+
+```text
+Approved:
++ API Failure Opt Out Exception
+
+Actual:
++ API Failure Opt Out Exception
+
+PROMOTIONPROOF VERDICT: PASS
+```
+
+### Contaminated implementation
+
+```text
+Actual:
++ API Failure Opt Out Exception
++ Account Information Category
+```
+
+```text
+PP-SCOPE-001
+Unexpected semantic change: Account Information Category
+PROMOTIONPROOF VERDICT: BLOCK
+Exit code: 2
+```
+
+After the unrelated value is removed, the same Agentia gate returns `PASS`.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    A[Copado User Story] --> B[Change Contract]
+    B --> C[Approved Semantic Operations]
+    D[Git and Salesforce DX Metadata] --> E[Semantic Parser]
+    E --> F[Actual Semantic Operations]
+    C --> G[Deterministic Policy Engine]
+    F --> G
+    G --> H{Verdict}
+    H -->|PASS| I[Agentia Workflow Continues]
+    H -->|BLOCK| J[Agentia Workflow Stops]
+    H -->|ERROR| K[Fail Closed]
+    G --> L[JSON Evidence]
+```
+
+### Trust boundary
+
+```text
+AI may draft or explain.
+Humans authorize scope.
+Deterministic policy code decides PASS or BLOCK.
+```
+
+## Decision Model
+
+| Verdict | Meaning | Exit code |
+|---|---|---:|
+| `PASS` | Every observed semantic operation is authorized | `0` |
+| `BLOCK` | An unexpected or destructive operation is present | `2` |
+| `ERROR` | Contract, Git baseline, or metadata could not be evaluated safely | `3` |
+
+### Implemented policy rules
+
+| Rule | Description |
+|---|---|
+| `PP-SCOPE-001` | Unexpected semantic addition |
+| `PP-DESTRUCTIVE-001` | Unapproved semantic removal |
+| `PP-PERM-001` | Unauthorized PermissionSet field-access expansion |
+
+## Change Contract
+
+```json
+{
+  "version": 1,
+  "story": {
+    "name": "US-0000025",
+    "title": "PromotionProof Demo - Add API Failure Opt Out Exception"
+  },
+  "component": "Case.Sub_Category__c",
+  "allowedPicklistAdds": [
+    "API Failure Opt Out Exception"
+  ],
+  "blockedUnexpectedChanges": true
+}
+```
+
+Contract location:
+
+```text
+.promotion-proof/contracts/US-0000025.json
+```
+
+## Quick Start
+
+### Prerequisites
+
+- Git
+- Node.js 18+
+- npm
+- Copado Agentia™ Headless CLI
+- Salesforce DX project
+- Copado CI/CD authentication
+- PowerShell on Windows for the current local gate
+
+### Build and link the plugin
+
+```powershell
+cd agentia-promotion-proof
+npm install
+npm run build
+agentia plugins link .
+cd ..
+```
+
+### Run PromotionProof
+
+```powershell
+agentia promotion-proof check --story US-0000025
+```
+
+### Run through Agentia
+
+```powershell
+agentia cicd work test --local
+```
+
+## Machine-Readable Evidence
+
+PromotionProof writes JSON evidence under:
+
+```text
+.promotion-proof/reports/
+```
+
+The report includes the User Story, Salesforce component, Git context, contract digest, approved operations, observed operations, findings, commit identity, and verdict.
+
+## Agentia Integration
+
+The TypeScript plugin lives under:
+
+```text
+agentia-promotion-proof/
+└── src/commands/promotion-proof/check.ts
+```
+
+The Windows project-local quality gate is:
+
+```text
+.agentia_quality_gates.cmd
+```
+
+Agentia invokes it through:
+
+```powershell
+agentia cicd work test --local
+```
+
+## Repository Structure
+
+```text
+.
+├── .agents/
+├── .promotion-proof/contracts/
+├── agentia-promotion-proof/
+├── force-app/
+├── promotion-proof/
+├── .agentia_quality_gates.cmd
+├── sfdx-project.json
+└── README.md
+```
+
+## Security and Governance
+
+- Secrets are not stored in the repository.
+- Local `.agentia` credentials/configuration remain ignored.
+- Unknown or unreadable policy inputs do not silently pass.
+- AI is not the final authorization authority.
+- Policy violations return non-zero process exit codes.
+- Remediation requires changing the artifact or obtaining explicit authorization.
+
+## What PromotionProof Does Not Replace
+
+PromotionProof complements Salesforce validation, tests, dependency analysis, static analysis, Git review, Copado governance, and human approval. It adds **story-specific semantic authorization**.
+
+## Current Limitations
+
+This is a focused hackathon prototype.
+
+- Picklist semantics are the primary end-to-end demonstration.
+- PermissionSet support currently focuses on field permissions.
+- Flow semantic analysis is not yet implemented.
+- Natural-language contract drafting is planned.
+- Copado Result persistence is planned.
+- Promotion-level aggregate verification is planned.
+- Environments without an active Local Quality Gate Extension Configuration can show a result-upload warning; local enforcement still uses the process exit code.
+
+## Roadmap
+
+- Human-approved contract versions and SHA-256 digests
+- Exact commit and deployment-manifest binding
+- PermissionSet and Profile policy expansion
+- Flow semantic operation support
+- Promotion-level Release Intent Graph
+- Cross-story semantic collision detection
+- Copado Result persistence
+- Signed release attestations
+- Agent Skill for explain/remediate/re-run workflows
+- SARIF and pull-request annotations
+
+## Hackathon Value
+
+PromotionProof demonstrates a real enterprise governance gap, a working Agentia extension, deterministic semantic analysis, Agentia gate enforcement, Salesforce DX/Git integration, Copado work-item integration, and a memorable `PASS → contamination → BLOCK → correction → PASS` sequence.
+
+> **PromotionProof prevents technically successful but functionally unauthorized Salesforce releases.**
+
+## Public Repository
+
+<https://github.com/PratikDTiwari/Copado-PromotionProofSFP>
+
+Hackathon implementation branch: `feature/US-0000025`
+
+## Author
+
+**Pratik Tiwari**  
+Salesforce DevOps Architect  
+LinkedIn: <https://www.linkedin.com/in/pratikdtiwari/>
+
+## License
+
+MIT

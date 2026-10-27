@@ -83,3 +83,13 @@ $RECYCLE.BIN/
 /.agentia/
 
 /.promotion-proof/reports/
+
+# Local PromotionProof diagnostics and recording helpers
+.promotion-proof/diagnostics/
+promotionproof-auto-video*.ps1
+README-FINAL*.txt
+
+# Local PromotionProof diagnostics and recording helpers
+.promotion-proof/diagnostics/
+promotionproof-auto-video*.ps1
+README-FINAL*.txt
